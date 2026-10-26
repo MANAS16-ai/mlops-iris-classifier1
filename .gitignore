@@ -6,6 +6,7 @@ __pycache__/
 *.egg-info/
 
 # Virtual Environments
+.venv-sklearn-test/
 .venv/
 venv/
 .venv-feast/
@@ -30,6 +31,12 @@ models/*.joblib
 **/data/*.parquet
 **/data/*.db
 .dvc/cache/
+
+# Test reports and coverage
+.coverage
+coverage.xml
+test-results.xml
+htmlcov/
 
 # MLflow
 mlruns/
