@@ -4,7 +4,8 @@ Model quality gate: trains on the real Experiment 4 feature set and
 asserts accuracy exceeds a defined minimum threshold. Intended to be 
 run in CI to block merges that regress model quality. 
 """ 
-import pandas as pd 
+import pandas as pd
+import pytest
 from sklearn.ensemble import RandomForestClassifier 
 from sklearn.model_selection import train_test_split 
 from sklearn.preprocessing import LabelEncoder 
