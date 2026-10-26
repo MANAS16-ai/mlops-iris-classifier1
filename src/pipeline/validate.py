@@ -1,7 +1,6 @@
-"""Stage 4: Data Validation.
+"""Stage 4: Data validation.
 
-Schema and statistical checks that must pass before data can flow downstream
-to training. Raises on failure to hard-stop the pipeline.
+Schema and statistical checks that must pass before data can flow downstream.
 """
 import argparse
 import logging
@@ -33,10 +32,11 @@ RANGE_CHECKS = {
 
 
 class DataValidationError(Exception):
-    """Raised when the processed dataset fails validation."""
+    """Raised when input data fails validation."""
 
 
 def validate(input_path: str) -> pd.DataFrame:
+    """Validate a feature CSV and return it when every check passes."""
     df = pd.read_csv(input_path)
     validation_errors = []
 
@@ -48,18 +48,28 @@ def validate(input_path: str) -> pd.DataFrame:
         null_cols = df.columns[df.isnull().any()].tolist()
         validation_errors.append(f"Unexpected null values in columns: {null_cols}")
 
+    # Only inspect columns after confirming they exist; report schema problems
+    # as DataValidationError rather than leaking a KeyError.
     if "species" in df.columns:
         invalid_species = set(df["species"].dropna().unique()) - VALID_SPECIES
         if invalid_species:
-            validation_errors.append(f"Unexpected species values: {invalid_species}")
+            validation_errors.append(
+                f"Unexpected species values: {sorted(invalid_species)}"
+            )
 
     for col, (low, high) in RANGE_CHECKS.items():
         if col not in df.columns:
             continue
-        out_of_range = df[(df[col] < low) | (df[col] > high)]
+        values = pd.to_numeric(df[col], errors="coerce")
+        invalid_numeric = values.isna()
+        if invalid_numeric.any():
+            validation_errors.append(f"Non-numeric values found in column '{col}'")
+            continue
+        out_of_range = values[(values < low) | (values > high)]
         if not out_of_range.empty:
             validation_errors.append(
-                f"{len(out_of_range)} rows out of expected range for '{col}' ({low}-{high})"
+                f"{len(out_of_range)} rows out of expected range for "
+                f"'{col}' ({low}-{high})"
             )
 
     if validation_errors:
