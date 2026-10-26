@@ -55,16 +55,7 @@ jobs:
         run: python -m compileall -q src tests 
 
       - name: Lint source code 
-
-        run: | 
-
-          python -m flake8 src/ \ 
-
-            --max-line-length=100 \ 
-
-            --extend-ignore=E203 \ 
-
-            --statistics 
+        run: python -m flake8 src/ --max-line-length=100 --extend-ignore=E203 --statistics
 
   test-suite: 
 
@@ -107,46 +98,16 @@ jobs:
         run: mkdir -p data/raw data/processed 
 
       - name: Collect Iris data 
-
-        run: | 
-
-          python src/pipeline/collect.py \ 
-
-            --output data/raw/iris_raw.csv 
+        run: python src/pipeline/collect.py --output data/raw/iris_raw.csv
 
       - name: Preprocess Iris data 
-
-        run: | 
-
-          python src/pipeline/preprocess.py \ 
-
-            --input data/raw/iris_raw.csv \ 
-
-            --output data/processed/iris_preprocessed.csv 
+        run: python src/pipeline/preprocess.py --input data/raw/iris_raw.csv --output data/processed/iris_preprocessed.csv
 
       - name: Engineer features 
-
-        run: | 
-
-          python src/pipeline/features.py \ 
-
-            --input data/processed/iris_preprocessed.csv \ 
-
-            --output data/processed/iris_features.csv 
+        run: python src/pipeline/features.py --input data/processed/iris_preprocessed.csv --output data/processed/iris_features.csv
 
       - name: Run complete test suite 
-
-        run: | 
-
-          python -m pytest tests/ -v \ 
-
-            --cov=src \ 
-
-            --cov-report=term-missing \ 
-
-            --cov-report=xml:coverage.xml \ 
-
-            --junitxml=test-results.xml 
+        run: python -m pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml --junitxml=test-results.xml
 
       - name: Upload test and coverage reports 
 
@@ -203,32 +164,13 @@ jobs:
         run: mkdir -p data/raw data/processed 
 
       - name: Collect Iris data 
-
-        run: | 
-
-          python src/pipeline/collect.py \ 
-
-            --output data/raw/iris_raw.csv 
+        run: python src/pipeline/collect.py --output data/raw/iris_raw.csv
 
       - name: Preprocess Iris data 
-
-        run: | 
-
-          python src/pipeline/preprocess.py \ 
-
-            --input data/raw/iris_raw.csv \ 
-
-            --output data/processed/iris_preprocessed.csv 
+        run: python src/pipeline/preprocess.py --input data/raw/iris_raw.csv --output data/processed/iris_preprocessed.csv
 
       - name: Engineer features 
-
-        run: | 
-
-          python src/pipeline/features.py \ 
-
-            --input data/processed/iris_preprocessed.csv \ 
-
-            --output data/processed/iris_features.csv 
+        run: python src/pipeline/features.py --input data/processed/iris_preprocessed.csv --output data/processed/iris_features.csv
 
       - name: Validate model quality 
 
