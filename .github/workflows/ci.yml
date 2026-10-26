@@ -73,9 +73,7 @@ jobs:
         run: python src/pipeline/validate.py --input data/processed/iris_features.csv
 
       - name: Run complete test suite
-        run: |
-          python -m pytest tests/ -v
-          python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml --junitxml=test-results.xml
+        run: python -m pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml --junitxml=test-results.xml
 
       - name: Upload test and coverage reports
         if: always()
