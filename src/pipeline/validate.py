@@ -1,7 +1,7 @@
-"""
-Stage 4: Data Validation.
-Schema and statistical checks that must pass before data can
-flow downstream to training. Raises on failure to hard-stop the pipeline.
+"""Stage 4: Data Validation.
+
+Schema and statistical checks that must pass before data can flow downstream
+to training. Raises on failure to hard-stop the pipeline.
 """
 import argparse
 import logging
@@ -33,7 +33,7 @@ RANGE_CHECKS = {
 
 
 class DataValidationError(Exception):
-    pass
+    """Raised when the processed dataset fails validation."""
 
 
 def validate(input_path: str) -> pd.DataFrame:
@@ -42,17 +42,20 @@ def validate(input_path: str) -> pd.DataFrame:
 
     missing_cols = EXPECTED_COLUMNS - set(df.columns)
     if missing_cols:
-        validation_errors.append(f"Missing expected columns: {missing_cols}")
+        validation_errors.append(f"Missing expected columns: {sorted(missing_cols)}")
 
     if df.isnull().any().any():
         null_cols = df.columns[df.isnull().any()].tolist()
         validation_errors.append(f"Unexpected null values in columns: {null_cols}")
 
-    invalid_species = set(df["species"].unique()) - VALID_SPECIES
-    if invalid_species:
-        validation_errors.append(f"Unexpected species values: {invalid_species}")
+    if "species" in df.columns:
+        invalid_species = set(df["species"].dropna().unique()) - VALID_SPECIES
+        if invalid_species:
+            validation_errors.append(f"Unexpected species values: {invalid_species}")
 
     for col, (low, high) in RANGE_CHECKS.items():
+        if col not in df.columns:
+            continue
         out_of_range = df[(df[col] < low) | (df[col] > high)]
         if not out_of_range.empty:
             validation_errors.append(
@@ -79,6 +82,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     try:
         validate(args.input)
-    except DataValidationError as e:
-        logger.error("Pipeline halted: %s", e)
+    except (DataValidationError, FileNotFoundError, pd.errors.ParserError) as exc:
+        logger.error("Pipeline halted: %s", exc)
         sys.exit(1)
