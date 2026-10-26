@@ -53,3 +53,18 @@ def test_validate_fails_on_out_of_range_value(tmp_path):
     path = _write(tmp_path, df) 
     with pytest.raises(DataValidationError, match="out of expected range"): 
         validate(path)
+
+def test_validate_reports_missing_species_without_key_error(tmp_path):
+    df = pd.DataFrame([VALID_ROW]).drop(columns=["species"])
+    path = _write(tmp_path, df)
+
+    with pytest.raises(DataValidationError, match="Missing expected columns"):
+        validate(path)
+
+
+def test_validate_reports_missing_range_column_without_key_error(tmp_path):
+    df = pd.DataFrame([VALID_ROW]).drop(columns=["petal width (cm)"])
+    path = _write(tmp_path, df)
+
+    with pytest.raises(DataValidationError, match="Missing expected columns"):
+        validate(path)
