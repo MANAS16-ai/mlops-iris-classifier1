@@ -6,6 +6,16 @@ from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
+"""
+train.py
+Baseline training script for the Iris classifier.
+Used to demonstrate a version-controlled ML project structure.
+"""
+import joblib
+from sklearn.datasets import load_iris
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
 
 
 def load_data():
@@ -28,6 +38,10 @@ def evaluate_model(model, X_test, y_test):
     accuracy = accuracy_score(y_test, predictions)
     report = classification_report(y_test, predictions)
     return accuracy, report
+    acc = accuracy_score(y_test, predictions)
+    report = classification_report(y_test, predictions)
+    print(classification_report(y_test, predictions))
+    return acc, report
 
 
 def main():
@@ -42,6 +56,13 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, output_path)
     print(f"Model saved to {output_path}")
+    acc, report = evaluate_model(model, X_test, y_test)
+
+    print(f"Accuracy: {acc:.4f}")
+    print(report)
+
+    joblib.dump(model, "models/iris_model.joblib")
+    print("Model saved to models/iris_model.joblib")
 
 
 if __name__ == "__main__":

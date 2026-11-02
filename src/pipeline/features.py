@@ -1,5 +1,8 @@
 """Stage 3: Feature Engineering.
 
+# src/pipeline/features.py
+"""
+Stage 3: Feature Engineering.
 Derives new, model-useful features from the raw measurements.
 """
 import argparse
@@ -19,6 +22,9 @@ def engineer_features(input_path: str, output_path: str) -> pd.DataFrame:
 
     petal_length = df["petal length (cm)"].where(df["petal length (cm)"] != 0)
     df["sepal_to_petal_length_ratio"] = df["sepal length (cm)"] / petal_length
+    df["sepal_to_petal_length_ratio"] = (
+        df["sepal length (cm)"] / df["petal length (cm)"].replace(0, pd.NA)
+    )
     df["petal_length_bin"] = pd.cut(
         df["petal length (cm)"],
         bins=[0, 2, 4.5, 7],
@@ -27,6 +33,7 @@ def engineer_features(input_path: str, output_path: str) -> pd.DataFrame:
 
     df.to_csv(output_path, index=False)
     logger.info("Engineered features for %d rows -> %s", len(df), output_path)
+    logger.info("Engineered %d features -> %s", df.shape[1], output_path)
     return df
 
 

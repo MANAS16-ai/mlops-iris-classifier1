@@ -25,7 +25,16 @@ jobs use separate runners and do not share generated files by default.
 The test-suite job writes JUnit XML to `test-results.xml` and coverage XML to
 `coverage.xml`. It uploads both as the
 `test-and-coverage-reports` artifact, including when tests fail, when the files
-were produced.
+were produced. When JUnit XML is available, the workflow also publishes a
+`Pytest Results` check using `dorny/test-reporter`. Publishing that check is
+skipped for pull requests from forks, where GitHub does not grant the workflow
+token permission to write checks; the downloadable artifact is still uploaded.
+
+The model-quality-gate job depends on the complete test-suite job. Since the
+complete suite also runs `tests/test_model_quality.py`, a deliberately raised
+accuracy threshold fails `test-suite` and causes the separate
+`model-quality-gate` job to be skipped. This is the expected result of the
+declared `needs:` chain.
 
 ## Local checks
 
