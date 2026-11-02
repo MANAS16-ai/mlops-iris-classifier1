@@ -1,121 +1,101 @@
-# Docker Deployment
+# Practical 10: Docker Containerization of the Iris ML Application
 
-## Overview
+## Objective and architecture
 
-The `Dockerfile` uses two stages:
+The Iris classifier is packaged as a Python HTTP service with a model trained during the Docker image build. The multi-stage build separates model creation from serving:
 
-- **Builder:** installs the pinned serving dependencies, reads
-  `data/processed/iris_features.csv`, trains the Random Forest model, and
-  writes the model and label encoder.
-- **Runtime:** starts from `python:3.11-slim` and copies in the installed
-  Python packages, model artifacts, and HTTP serving script. The dataset and
-  training script are not copied into the runtime image.
+- **Builder:** installs pinned dependencies, reads `data/processed/iris_features.csv`, and writes `models/final_model.joblib` and `models/label_encoder.joblib`.
+- **Runtime:** copies the installed Python packages, model artifacts, and `src/serve.py` into a fresh Python runtime image. Training data and training code are not included in this stage.
 
-Separating the stages keeps training inputs and code out of the running
-container. The Python dependencies are also needed at inference time, however,
-so the runtime image is not just the small Python base image.
+Dependencies are installed before application files are copied, so source-only changes can reuse the dependency build layer. `.dockerignore` excludes Git history, virtual environments, caches, experiment output, and documentation while retaining the processed CSV needed by the builder.
 
 ## Build and run
 
-Run these commands from the repository root:
+Run from the repository root:
 
 ```bash
 docker build -t iris-classifier:v1 .
 docker run -d --name iris-classifier-container -p 8000:8000 iris-classifier:v1
 ```
 
-The server listens on port `8000`. Check container status and the health check:
+The application listens on container port `8000`, published as host port `8000`. Check its status and Docker health:
 
 ```bash
 docker ps
 docker inspect --format='{{.State.Health.Status}}' iris-classifier-container
-curl -i http://localhost:8000/health
 ```
 
-The Docker health check requests `http://localhost:8000/health` every 30
-seconds, allows 5 seconds for a response, waits 10 seconds before its first
-check, and retries up to 3 times. A healthy response is:
+The image defines a health check against `/health` every 30 seconds, with a 5-second timeout, a 10-second start period, and 3 retries.
+
+## API verification
+
+Check health:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
 
 ```json
 {"status": "healthy"}
 ```
 
-## Prediction requests
-
-`POST /predict` expects a JSON object with all seven feature names:
+Submit all seven model features to `POST /predict`:
 
 ```bash
-curl -i -X POST http://localhost:8000/predict \
+curl -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
-  -d '{"sepal length (cm)": 5.1, "sepal width (cm)": 3.5, "petal length (cm)": 1.4, "petal width (cm)": 0.2, "sepal_area": 17.85, "petal_area": 0.28, "sepal_to_petal_length_ratio": 3.642857}'
+  -d '{"sepal length (cm)":5.1,"sepal width (cm)":3.5,"petal length (cm)":1.4,"petal width (cm)":0.2,"sepal_area":17.85,"petal_area":0.28,"sepal_to_petal_length_ratio":3.642857}'
 ```
 
-For these sample values, the observed response was HTTP 200:
+The verified response was:
 
 ```json
-{"prediction": "setosa", "probabilities": [1.0, 0.0, 0.0]}
+{"prediction":"setosa","probabilities":[1.0,0.0,0.0]}
 ```
 
-An incomplete request is rejected with HTTP 400 and names the missing
-features:
+A request missing required fields returns HTTP 400 and a JSON `missing` list. The incomplete payload `{"sepal length (cm)":5.1}` was verified to return HTTP 400.
+
+## Image size, layers, and cache
+
+The verified image was reported as **680 MB disk usage** and **155 MB content size** by `docker images`. This is not a tens-of-megabytes image: scikit-learn, NumPy, pandas, and SciPy make up a significant runtime dependency footprint.
+
+The multi-stage build keeps training-only data and code out of the final runtime stage. A single-stage baseline was not built, so no measured size comparison is claimed. Inspect the image layers with:
 
 ```bash
-curl -i -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"sepal length (cm)": 5.1}'
-```
-
-Observed response:
-
-```json
-{"error": "Missing features", "missing": ["sepal width (cm)", "petal length (cm)", "petal width (cm)", "sepal_area", "petal_area", "sepal_to_petal_length_ratio"]}
-```
-
-## Image size and layers
-
-At inspection time, `docker image inspect` reported **680,336,529 bytes**
-(about 649 MiB / 680 MB as displayed by Docker). `docker images iris-classifier`
-reported 680 MB disk usage and 155 MB content size. These are Docker's reported
-measurements, not a claim that the image is in the tens-of-megabytes range.
-
-The image history showed about 383 MB in the copied Python package layer. This
-is expected to dominate the image because the numerical and machine-learning
-packages are required at prediction time. A naive single-stage build would
-also retain the processed training CSV and training script in its image layers;
-the multi-stage build excludes those files from the runtime image. No
-single-stage comparison image was built, so a numerical size reduction versus
-that baseline has not been measured.
-
-Inspect the local image and its layers with:
-
-```bash
-docker images iris-classifier
 docker history iris-classifier:v1
 ```
 
-To check whether Docker can reuse layers on a subsequent build, repeat:
+Rebuild without changing inputs to check layer cache reuse:
 
 ```bash
 docker build -t iris-classifier:v1 .
 ```
 
-On the verification rebuild, all unchanged dependency, training, and copy
-steps were reported as cached.
-
 ## Logs and cleanup
 
-View the server startup and request logs:
+View startup and request logs:
 
 ```bash
 docker logs iris-classifier-container
 ```
 
-The observed startup message is `Iris server listening on port 8000`.
-Stop and remove the container when finished:
+Stop and remove the container after use:
 
 ```bash
 docker stop iris-classifier-container
 docker rm iris-classifier-container
 ```
 
-The image remains available locally after the container is removed.
+The image remains available locally after removing the container.
+
+## Verification results
+
+- The image built and trained the model from 149 CSV rows.
+- The container started healthy with port `8000` published.
+- `GET /health` returned `{"status":"healthy"}`.
+- The sample prediction returned `setosa` and probabilities `[1.0, 0.0, 0.0]`.
+- An incomplete prediction request returned HTTP 400.
+- Container logs showed service startup and health/prediction requests.
+- The container was stopped and removed after testing.
