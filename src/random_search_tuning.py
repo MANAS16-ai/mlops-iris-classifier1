@@ -1,4 +1,7 @@
-"""Random Search over the same hyperparameter space as Grid Search, using a smaller evaluation budget for comparison."""
+"""
+Random Search over the same hyperparameter space as Grid Search, using a
+smaller evaluation budget for comparison.
+"""
 
 import mlflow
 import pandas as pd

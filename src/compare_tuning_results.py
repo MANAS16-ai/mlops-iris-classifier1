@@ -1,4 +1,7 @@
-"""Pulls baseline, grid-search, and random-search runs from MLflow and prints a consolidated comparison table."""
+"""
+Pulls baseline, grid-search, and random-search runs from MLflow and prints a
+consolidated comparison table.
+"""
 
 import mlflow
 from mlflow.tracking import MlflowClient
@@ -18,7 +21,8 @@ print("-" * 70)
 
 for run in sorted(runs, key=lambda r: r.data.tags.get("mlflow.runName", "")):
     name = run.data.tags.get("mlflow.runName", "unknown")
-    cv_score = run.data.metrics.get("cv_f1_macro_mean", run.data.metrics.get("best_cv_f1_macro", 0.0))
+    cv_score = run.data.metrics.get(
+        "cv_f1_macro_mean", run.data.metrics.get("best_cv_f1_macro", 0.0))
     test_acc = run.data.metrics.get("test_accuracy", 0.0)
 
     total_combinations = run.data.params.get("total_combinations")

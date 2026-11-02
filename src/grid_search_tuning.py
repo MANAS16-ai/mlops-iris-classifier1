@@ -1,4 +1,7 @@
-"""Exhaustive Grid Search over a Random Forest hyperparameter grid, with every candidate logged to MLflow."""
+"""
+Exhaustive Grid Search over a Random Forest hyperparameter grid, with every
+candidate logged to MLflow.
+"""
 
 import mlflow
 import pandas as pd

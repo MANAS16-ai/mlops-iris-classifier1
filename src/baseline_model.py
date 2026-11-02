@@ -1,4 +1,7 @@
-"""Establishes a simple baseline model (default Decision Tree) against which all subsequent tuning efforts are measured."""
+"""
+Establishes a simple baseline model (default Decision Tree) against which all
+subsequent tuning efforts are measured.
+"""
 
 import mlflow
 import pandas as pd
