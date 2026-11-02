@@ -1,3 +1,5 @@
+"""Stage 3: Feature Engineering.
+
 # src/pipeline/features.py
 """
 Stage 3: Feature Engineering.
@@ -17,6 +19,9 @@ def engineer_features(input_path: str, output_path: str) -> pd.DataFrame:
 
     df["sepal_area"] = df["sepal length (cm)"] * df["sepal width (cm)"]
     df["petal_area"] = df["petal length (cm)"] * df["petal width (cm)"]
+
+    petal_length = df["petal length (cm)"].where(df["petal length (cm)"] != 0)
+    df["sepal_to_petal_length_ratio"] = df["sepal length (cm)"] / petal_length
     df["sepal_to_petal_length_ratio"] = (
         df["sepal length (cm)"] / df["petal length (cm)"].replace(0, pd.NA)
     )
@@ -27,6 +32,7 @@ def engineer_features(input_path: str, output_path: str) -> pd.DataFrame:
     )
 
     df.to_csv(output_path, index=False)
+    logger.info("Engineered features for %d rows -> %s", len(df), output_path)
     logger.info("Engineered %d features -> %s", df.shape[1], output_path)
     return df
 
